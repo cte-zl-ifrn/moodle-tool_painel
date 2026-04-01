@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="admin/tool/painel/db" VERSION="20240101" COMMENT="XMLDB file for Moodle admin/tool/painel"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="tool_painel_log" COMMENT="Log of Painel AVA API requests">
+      <FIELDS>
+        <FIELD NAME="id"         TYPE="int"  LENGTH="10" NOTNULL="true"  SEQUENCE="true"/>
+        <FIELD NAME="userid"     TYPE="int"  LENGTH="10" NOTNULL="true"  SEQUENCE="false" COMMENT="ID of the user who made the request"/>
+        <FIELD NAME="targetuserid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="ID of the user whose courses were requested"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"  SEQUENCE="false" COMMENT="Unix timestamp of the request"/>
+        <FIELD NAME="ipaddress"  TYPE="char" LENGTH="45" NOTNULL="false" SEQUENCE="false" COMMENT="Client IP address"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_userid"       UNIQUE="false" FIELDS="userid"/>
+        <INDEX NAME="idx_targetuserid" UNIQUE="false" FIELDS="targetuserid"/>
+        <INDEX NAME="idx_timecreated"  UNIQUE="false" FIELDS="timecreated"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>
