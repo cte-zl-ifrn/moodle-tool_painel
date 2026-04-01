@@ -68,6 +68,7 @@ class tool_painelava_admin_settingspage extends admin_settingpage
             $this->add_heading('auth_token_header');
             $this->add_configtext("auth_token");
             $this->add_configtext("painel_url", 'https://ava.ifrn.edu.br');
+            $this->add_configtext("course_custom_field_sala_tipo", 'sala_tipo');
         }
     }
 }
