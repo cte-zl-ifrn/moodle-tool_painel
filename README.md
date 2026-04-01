@@ -1,4 +1,4 @@
-# Painel AVA – moodle-tool_painel
+# Painel AVA – moodle-tool_painelava
 
 > Moodle Admin Tool plugin que integra o Moodle ao **Painel AVA**, fornecendo
 > uma API externa para recuperar os dados de cursos de um usuário organizados
@@ -10,7 +10,7 @@
 
 | Funcionalidade | Descrição |
 |---|---|
-| **API externa** | `tool_painel_get_user_courses` – retorna todos os cursos em que o usuário está matriculado, separados por tipo (Diário, FIC, Coordenação, Laboratório, Modelo, Outros). |
+| **API externa** | `tool_painelava_get_user_courses` – retorna todos os cursos em que o usuário está matriculado, separados por tipo (Diário, FIC, Coordenação, Laboratório, Modelo, Outros). |
 | **Campos personalizados** | Todos os campos customizados de cada curso são retornados na resposta. |
 | **Papéis** | O papel principal e todos os papéis do usuário em cada curso são retornados. |
 | **Configurações** | Permite configurar o campo personalizado e os prefixos de nome curto usados para classificar os tipos de cursos. |
@@ -39,33 +39,13 @@
 
 ## Configuração
 
-| Configuração | Padrão | Descrição |
-|---|---|---|
-| `coursetypefield` | `tipo_curso` | Nome curto do campo personalizado de curso usado para identificar o tipo. |
-| `prefix_fic` | `FIC-` | Prefixo do nome curto para cursos FIC. |
-| `prefix_coordenacao` | `COORD-` | Prefixo para salas de coordenação. |
-| `prefix_laboratorio` | `LAB-` | Prefixo para laboratórios. |
-| `prefix_modelo` | `MODELO-` | Prefixo para cursos modelo. |
-| `prefix_diario` | *(vazio)* | Prefixo para cursos diários (deixe vazio para usar apenas o campo personalizado). |
-| `enablelogging` | `0` | Habilita o registro de chamadas à API no log do Moodle. |
-
-### Lógica de classificação de tipo de curso
-
-O plugin determina o tipo de cada curso na seguinte ordem de prioridade:
-
-1. **Campo personalizado** – verifica o campo cujo `shortname` é o valor de
-   `coursetypefield`. O valor deve ser uma das strings: `diario`, `fic`,
-   `coordenacao`, `laboratorio` ou `modelo` (com ou sem acentos).
-2. **Prefixo do nome curto** – verifica os prefixos configurados nas
-   configurações do plugin.
-3. **Fallback** – se nenhuma das regras acima se aplicar, o curso é classificado
-   como `outros`.
+1. `auth_token`: Token que o Painel AVA usará para autenticar-se no Moodle.
 
 ---
 
 ## API Externa
 
-### Função: `tool_painel_get_user_courses`
+### Função: `tool_painelava_get_user_courses`
 
 **Parâmetros**
 
@@ -159,8 +139,8 @@ admin/tool/painel/
 │   ├── uninstall.php                    # Hook de desinstalação
 │   └── upgrade.php                      # Passos de atualização
 ├── lang/
-│   ├── en/tool_painel.php               # Strings em inglês
-│   └── pt_br/tool_painel.php            # Strings em português (Brasil)
+│   ├── en/tool_painelava.php               # Strings em inglês
+│   └── pt_br/tool_painelava.php            # Strings em português (Brasil)
 ├── pix/
 │   └── icon.png                         # Ícone do plugin (48×48)
 ├── tests/

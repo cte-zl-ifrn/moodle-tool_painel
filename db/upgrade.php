@@ -15,36 +15,22 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Upgrade steps for tool_painel.
+ * Upgrade steps for tool_painelava.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__.'/migrate.php');
 
 /**
- * Upgrade the tool_painel plugin.
+ * Upgrade the tool_painelava plugin.
  *
  * @param  int  $oldversion  The version we are upgrading from.
  * @return bool
  */
-function xmldb_tool_painel_upgrade(int $oldversion): bool {
-    global $DB;
-
-    $dbman = $DB->get_manager();
-
-    // Example upgrade step (uncomment and adapt when a schema change is needed):
-    // if ($oldversion < 2024010101) {
-    //     // Add a new column to tool_painel_log.
-    //     $table = new xmldb_table('tool_painel_log');
-    //     $field = new xmldb_field('extra', XMLDB_TYPE_TEXT, null, null, null, null, null, 'ipaddress');
-    //     if (!$dbman->field_exists($table, $field)) {
-    //         $dbman->add_field($table, $field);
-    //     }
-    //     upgrade_plugin_savepoint(true, 2024010101, 'tool', 'painel');
-    // }
-
-    return true;
+function xmldb_tool_painelava_upgrade(int $oldversion): bool {
+    return \tool_painelava\tool_painelava_migrate($oldversion);
 }

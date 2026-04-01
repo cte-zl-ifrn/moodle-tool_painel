@@ -19,19 +19,19 @@
  *
  * Fired when the external API is called to retrieve user courses.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_painel\event;
+namespace tool_painelava\event;
 
 defined('MOODLE_INTERNAL') || die();
 
 /**
  * Event fired when user courses are requested via the Painel AVA external API.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

@@ -17,19 +17,19 @@
 /**
  * Scheduled task: synchronise course panel data.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_painel\task;
+namespace tool_painelava\task;
 
 defined('MOODLE_INTERNAL') || die();
 
 /**
  * Scheduled task that refreshes cached course panel data.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -41,7 +41,7 @@ class sync_courses extends \core\task\scheduled_task {
      * @return string
      */
     public function get_name(): string {
-        return get_string('task_sync_courses', 'tool_painel');
+        return get_string('task_sync_courses', 'tool_painelava');
     }
 
     /**
@@ -49,6 +49,6 @@ class sync_courses extends \core\task\scheduled_task {
      */
     public function execute(): void {
         // Placeholder for any future cache-refresh or pre-computation logic.
-        mtrace('tool_painel: sync_courses task executed successfully.');
+        mtrace('tool_painelava: sync_courses task executed successfully.');
     }
 }

@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * External functions definition for tool_painel.
+ * External functions definition for ava.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,8 +25,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = [
-    'tool_painel_get_user_courses' => [
-        'classname'    => \tool_painel\external\get_user_courses::class,
+    'tool_painelava_get_user_courses' => [
+        'classname'    => \tool_painelava\external\get_user_courses::class,
         'methodname'   => 'execute',
         'description'  => 'Returns courses of a user separated by course type, with custom fields and roles.',
         'type'         => 'read',

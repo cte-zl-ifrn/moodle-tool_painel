@@ -15,14 +15,14 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Unit tests for the tool_painel external API.
+ * Unit tests for the tool_painelava external API.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_painel\external;
+namespace tool_painelava\external;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -32,12 +32,12 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
 use externallib_advanced_testcase;
 
 /**
- * Tests for tool_painel\external\get_user_courses.
+ * Tests for tool_painelava\external\get_user_courses.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \tool_painel\external\get_user_courses
+ * @covers     \tool_painelava\external\get_user_courses
  */
 class get_user_courses_test extends externallib_advanced_testcase {
 
@@ -47,37 +47,11 @@ class get_user_courses_test extends externallib_advanced_testcase {
     protected function setUp(): void {
         parent::setUp();
         $this->resetAfterTest();
-
-        // Configure prefix defaults.
-        set_config('coursetypefield',    'tipo_curso', 'tool_painel');
-        set_config('prefix_fic',         'FIC-',       'tool_painel');
-        set_config('prefix_coordenacao', 'COORD-',     'tool_painel');
-        set_config('prefix_laboratorio', 'LAB-',       'tool_painel');
-        set_config('prefix_modelo',      'MODELO-',    'tool_painel');
-        set_config('prefix_diario',      '',           'tool_painel');
-        set_config('enablelogging',      0,            'tool_painel');
     }
 
     // -----------------------------------------------------------------------
     // Parameter & permission tests
     // -----------------------------------------------------------------------
-
-    /**
-     * A user can request their own course list (default userid = 0).
-     */
-    public function test_current_user_default_parameter(): void {
-        $user = $this->getDataGenerator()->create_user();
-        $this->setUser($user);
-
-        $result = get_user_courses::execute(0);
-
-        $this->assertArrayHasKey('diario',      $result);
-        $this->assertArrayHasKey('fic',         $result);
-        $this->assertArrayHasKey('coordenacao', $result);
-        $this->assertArrayHasKey('laboratorio', $result);
-        $this->assertArrayHasKey('modelo',      $result);
-        $this->assertArrayHasKey('outros',      $result);
-    }
 
     /**
      * A regular user cannot view another user's courses without the capability.

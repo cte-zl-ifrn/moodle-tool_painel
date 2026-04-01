@@ -17,15 +17,15 @@
 /**
  * Plugin version information.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'tool_painel';
-$plugin->version   = 2024010100;
-$plugin->requires  = 2022041900; // Moodle 4.0+.
+$plugin->component = 'tool_painelava';
+$plugin->version   = 2026040101;
+$plugin->requires  = 2024100710; // Moodle 4.5 or later.
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.0';
+$plugin->release   = '4.5.01';

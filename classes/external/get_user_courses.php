@@ -20,12 +20,12 @@
  * Returns the courses a user is enrolled in, separated by course type,
  * including all custom profile fields and the user's role in each course.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_painel\external;
+namespace tool_painelava\external;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -44,8 +44,8 @@ use moodle_exception;
 /**
  * External function to retrieve user courses grouped by type.
  *
- * @package    tool_painel
- * @copyright  2024 IFRN
+ * @package    tool_painelava
+ * @copyright  2026 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class get_user_courses extends external_api {
@@ -91,18 +91,18 @@ class get_user_courses extends external_api {
         self::validate_context($systemcontext);
 
         // Capability check: the caller must be the user themselves OR have the
-        // tool_painel:viewothercourses capability.
+        // tool_painelava:viewothercourses capability.
         if ($userid !== (int) $USER->id) {
-            require_capability('tool/painel:viewothercourses', $systemcontext);
+            require_capability('tool/painelava:viewothercourses', $systemcontext);
         }
 
         // Ensure the target user exists.
         if (!$DB->record_exists('user', ['id' => $userid, 'deleted' => 0])) {
-            throw new moodle_exception('invaliduser', 'tool_painel');
+            throw new moodle_exception('invaliduser', 'tool_painelava');
         }
 
         // Get plugin settings.
-        $config = get_config('tool_painel');
+        $config = get_config('tool_painelava');
         $coursetypefield = !empty($config->coursetypefield) ? $config->coursetypefield : 'tipo_curso';
 
         // Fetch all enrollments for the user.
@@ -133,7 +133,7 @@ class get_user_courses extends external_api {
 
         // Log the API call if logging is enabled.
         if (!empty($config->enablelogging)) {
-            $event = \tool_painel\event\user_courses_requested::create([
+            $event = \tool_painelava\event\user_courses_requested::create([
                 'context'  => $systemcontext,
                 'relateduserid' => $userid,
             ]);
@@ -387,7 +387,7 @@ class get_user_courses extends external_api {
                 }
             } catch (\Exception $e) {
                 // If custom fields are not available for this course, continue.
-                debugging('tool_painel: could not get custom fields for course ' . $courseid . ': ' . $e->getMessage());
+                debugging('tool_painelava: could not get custom fields for course ' . $courseid . ': ' . $e->getMessage());
             }
         }
 

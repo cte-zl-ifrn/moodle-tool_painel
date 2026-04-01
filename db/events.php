@@ -15,13 +15,13 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Event observers for tool_painel.
+ * Event observers for tool_painelava.
  *
  * This file is detected automatically by Moodle's event subsystem.
- * Add entries here if tool_painel needs to react to events fired by
+ * Add entries here if tool_painelava needs to react to events fired by
  * other plugins/components.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -35,7 +35,7 @@ defined('MOODLE_INTERNAL') || die();
 // $observers = [
 //     [
 //         'eventname'    => '\core\event\user_enrolment_created',
-//         'callback'     => '\tool_painel\observer\enrolment_observer::user_enrolled',
+//         'callback'     => '\tool_painelava\observer\enrolment_observer::user_enrolled',
 //         'includefile'  => null,
 //         'internal'     => false,
 //         'priority'     => 200,

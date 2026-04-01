@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Scheduled tasks for tool_painel.
+ * Scheduled tasks for tool_painelava.
  *
- * @package    tool_painel
+ * @package    tool_painelava
  * @copyright  2024 IFRN
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $tasks = [
     [
-        'classname' => \tool_painel\task\sync_courses::class,
+        'classname' => \tool_painelava\task\sync_courses::class,
         'blocking'  => 0,
         'minute'    => '0',
         'hour'      => '3',
