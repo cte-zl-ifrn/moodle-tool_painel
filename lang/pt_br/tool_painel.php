@@ -39,6 +39,9 @@ $string['auth_token_header_desc'] = 'Qual será o token utilizado pelo Painel AV
 $string["auth_token"] = 'Token de autenticação';
 $string["auth_token_desc"] = 'Qual será o token utilizado pelo Painel AVA para se autenticar nesta instalação do Moodle';
 
+$string['painel_url'] = 'Painel AVA URL';
+$string['painel_url_desc'] = '(ex: https://ava.ifrn.edu.br)';
+
 // Events.
 $string['event_user_courses_requested'] = 'Lista de cursos do usuário solicitada';
 

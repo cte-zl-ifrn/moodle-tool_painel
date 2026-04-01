@@ -65,9 +65,9 @@ class tool_painelava_admin_settingspage extends admin_settingpage
     {
         global $CFG;
         if ($admin_mode) {
-            $default_enrol = is_dir(dirname(__FILE__) . '/../../enrol/suap/') ? 'suap' : 'manual';
             $this->add_heading('auth_token_header');
             $this->add_configtext("auth_token");
+            $this->add_configtext("painel_url", 'https://ava.ifrn.edu.br');
         }
     }
 }
