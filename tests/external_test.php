@@ -66,7 +66,7 @@ class get_user_courses_test extends externallib_advanced_testcase {
     }
 
     /**
-     * A manager with tool/painel:viewothercourses can view another user's courses.
+     * A manager with tool/painelava:viewothercourses can view another user's courses.
      */
     public function test_manager_can_view_other_user(): void {
         global $DB;

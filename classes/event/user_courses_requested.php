@@ -52,7 +52,7 @@ class user_courses_requested extends \core\event\base {
      * @return string
      */
     public static function get_name(): string {
-        return get_string('event_user_courses_requested', 'tool_painel');
+        return get_string('event_user_courses_requested', 'tool_painelava');
     }
 
     /**
@@ -70,6 +70,6 @@ class user_courses_requested extends \core\event\base {
      * @return \moodle_url
      */
     public function get_url(): \moodle_url {
-        return new \moodle_url('/admin/tool/painel/index.php');
+        return new \moodle_url('/admin/tool/painelava/index.php');
     }
 }

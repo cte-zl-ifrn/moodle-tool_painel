@@ -50,5 +50,5 @@ function get_or_create($tablename, $keys, $values)
 
 function config($name)
 {
-    return get_config('tool_painel', $name);
+    return get_config('tool_painelava', $name);
 }

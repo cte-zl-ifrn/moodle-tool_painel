@@ -27,7 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 $capabilities = [
 
     // Allows a user to view another user's course list via the external API.
-    'tool/painel:viewothercourses' => [
+    'tool/painelava:viewothercourses' => [
         'riskbitmask'  => RISK_PERSONAL,
         'captype'      => 'read',
         'contextlevel' => CONTEXT_SYSTEM,
@@ -37,7 +37,7 @@ $capabilities = [
     ],
 
     // Allows a user to access the Painel AVA admin panel.
-    'tool/painel:view' => [
+    'tool/painelava:view' => [
         'riskbitmask'  => 0,
         'captype'      => 'read',
         'contextlevel' => CONTEXT_SYSTEM,

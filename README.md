@@ -29,7 +29,7 @@
 ## Instalação
 
 1. Copie (ou clone) o conteúdo deste repositório para
-   `<moodle_root>/admin/tool/painel/`.
+   `<moodle_root>/admin/tool/painelava/`.
 2. Acesse o painel de administração do Moodle e execute a atualização do banco
    de dados.
 3. Navegue até **Administração do site → Plugins → Ferramentas de administração
@@ -101,7 +101,7 @@ Cada objeto de curso contém:
 
 - Um usuário pode sempre consultar seus próprios cursos.
 - Para consultar cursos de outro usuário, é necessária a capacidade
-  `tool/painel:viewothercourses` no contexto do sistema (concedida por padrão
+  `tool/painelava:viewothercourses` no contexto do sistema (concedida por padrão
   ao papel `manager`).
 
 ---
@@ -113,7 +113,7 @@ PHPUnit integrado ao Moodle.
 
 ```bash
 # Execute a partir do diretório raiz do Moodle
-vendor/bin/phpunit admin/tool/painel/tests/external_test.php
+vendor/bin/phpunit admin/tool/painelava/tests/external_test.php
 ```
 
 ---
@@ -121,7 +121,7 @@ vendor/bin/phpunit admin/tool/painel/tests/external_test.php
 ## Estrutura de Arquivos
 
 ```
-admin/tool/painel/
+admin/tool/painelava/
 ├── classes/
 │   ├── event/
 │   │   └── user_courses_requested.php   # Evento disparado pela API

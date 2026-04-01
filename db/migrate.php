@@ -29,7 +29,8 @@ namespace tool_painelava;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/admin/tool/painel/locallib.php');
+require_once("../../config.php");
+require_once($CFG->dirroot . '/admin/tool/painelava/locallib.php');
 
 
 function save_course_custom_field($categoryid, $shortname, $name, $type = 'text', $configdata = '{"required":"0","uniquevalues":"0","displaysize":50,"maxlength":250,"ispassword":"0","link":"","locked":"0","visibility":"0"}')
@@ -66,7 +67,7 @@ function bulk_course_custom_field()
         'sala_tipo',
         'Tipo de sala',
         'select',
-        '{"options":"Diário\nAuto inscrição\nCoordenação\nLaboratório\nModelo","required":"0","uniquevalues":"0","displaysize":50,"maxlength":250,"ispassword":"0","link":"","locked":"1","visibility":"0"}'
+        '{"options":"diarios\nautoinscricoes\ncoordenacoes\npraticas\nmodelos","required":"0","uniquevalues":"0","displaysize":50,"maxlength":250,"ispassword":"0","link":"","locked":"1","visibility":"0"}'
     );
 }
 
