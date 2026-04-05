@@ -106,10 +106,15 @@ class get_diarios_service extends \tool_painelava\service
         }
 
         $all_diarios = $this->get_all_diarios($USER->username);
+
         $enrolled_courses = \core_course_external::get_enrolled_courses_by_timeline_classification($situacao, 0, 0, $ordenacao)['courses'];
+        
         $diarios = [];
         $coordenacoes = [];
         $praticas = [];
+
+        $cf_handler = \core_course\customfield\course_handler::create();
+
         foreach ($enrolled_courses as $diario) {
             unset($diario->summary);
             unset($diario->summaryformat);
@@ -117,29 +122,94 @@ class get_diarios_service extends \tool_painelava\service
             $coursecontext = \context_course::instance($diario->id);
             $diario->can_set_visibility = has_capability('moodle/course:visibility', $coursecontext, $USER) ? 1 : 0;
 
-            if (preg_match(REGEX_CODIGO_COORDENACAO, $diario->shortname)) {
+            $sql = "SELECT f.shortname, d.intvalue, d.charvalue, f.type, f.configdata
+                    FROM {customfield_data} d
+                    JOIN {customfield_field} f ON d.fieldid = f.id
+                    WHERE d.instanceid = ?";
+            $cf_records = $DB->get_records_sql($sql, [$diario->id]);
+
+            $cf = new \stdClass();
+            foreach ($cf_records as $record) {
+                if ($record->type === 'select') {
+                    $config = json_decode($record->configdata);
+                    $options = explode("\n", str_replace("\r", "", $config->options ?? ''));
+                    $index = ((int)$record->intvalue) - 1;
+                    $cf->{$record->shortname} = $options[$index] ?? '';
+                } else {
+                    $cf->{$record->shortname} = $record->charvalue;
+                }
+            }
+
+            $sala_tipo = isset($cf->sala_tipo) ? strtolower(trim($cf->sala_tipo)) : '';
+
+            if ($sala_tipo === 'coordenacoes' || preg_match(REGEX_CODIGO_COORDENACAO, $diario->shortname)) {
                 $coordenacoes[] = $diario;
-            } elseif (preg_match(REGEX_CODIGO_PRATICA, $diario->shortname)) {
+            } elseif ($sala_tipo === 'praticas' || preg_match(REGEX_CODIGO_PRATICA, $diario->shortname)) {
                 $praticas[] = $diario;
-            } elseif (!empty($semestre . $disciplina . $curso . $q)) {
-                preg_match(REGEX_CODIGO_DIARIO, $diario->shortname, $matches);
-                if (count($matches) == REGEX_CODIGO_DIARIO_ELEMENTS_COUNT) {
-                    if (
-                        ((empty($q)) || (!empty($q) && strpos(strtoupper($diario->shortname . ' ' . $diario->fullname), strtoupper($q)) !== false)) &&
-                        (
+            } else {
+                // Cai aqui se for 'diarios', 'autoinscricoes' ou se for um CURSO ANTIGO
+                if (!empty($semestre . $disciplina . $curso . $q)) {
+                    preg_match(REGEX_CODIGO_DIARIO, $diario->shortname, $matches);
+                    if (count($matches) == REGEX_CODIGO_DIARIO_ELEMENTS_COUNT) {
+                        if (
+                            ((empty($q)) || (!empty($q) && strpos(strtoupper($diario->shortname . ' ' . $diario->fullname), strtoupper($q)) !== false)) &&
                             ((empty($semestre)) || (!empty($semestre) && $matches[REGEX_CODIGO_DIARIO_SEMESTRE] == $semestre)) &&
                             ((empty($disciplina)) || (!empty($disciplina) && $matches[REGEX_CODIGO_DIARIO_DISCIPLINA] == $disciplina)) &&
                             ((empty($curso)) || (!empty($curso) && $matches[REGEX_CODIGO_DIARIO_CURSO] == $curso))
-                        )
-                    ) {
-                        $diarios[] = $diario;
+                        ) {
+                            $diarios[] = $diario;
+                        }
                     }
+                } else {
+                    $diarios[] = $diario;
                 }
-            } else {
-                // $diario->fullname = $diario->fullname . ' []';
-                $diarios[] = $diario;
             }
         }
+
+        $vitrine_autoinscricoes = [];
+        
+        // 1. Descobre o ID numérico da opção "autoinscricoes" no banco
+        $campo_sala = $DB->get_record('customfield_field', ['shortname' => 'sala_tipo']);
+        
+        if ($campo_sala) {
+            $config = json_decode($campo_sala->configdata);
+            $opcoes = explode("\n", str_replace("\r", "", $config->options ?? ''));
+            $indice_opcao = -1;
+            
+            foreach ($opcoes as $i => $opcao) {
+                if (strtolower(trim($opcao)) === 'autoinscricoes') {
+                    $indice_opcao = $i + 1;
+                    break;
+                }
+            }
+
+            if ($indice_opcao !== -1) {
+                // 2. Busca todos os cursos visíveis marcados com essa opção
+                $sql_vitrine = "SELECT c.id, c.fullname, c.shortname, c.summary 
+                                FROM {course} c
+                                JOIN {customfield_data} d ON d.instanceid = c.id
+                                WHERE d.fieldid = ? AND d.intvalue = ? AND c.visible = 1";
+                                
+                $cursos_vitrine = $DB->get_records_sql($sql_vitrine, [$campo_sala->id, $indice_opcao]);
+
+                // 3. Cria um mapa (Dicionário) das matrículas atuais do aluno (O(1))
+                $mapa_matriculados = [];
+                foreach ($all_diarios as $diario_aluno) {
+                    $mapa_matriculados[$diario_aluno->id] = true;
+                }
+
+                // 4. Monta a lista final com a Flag solicitada
+                foreach ($cursos_vitrine as $curso_vitrine) {
+                    
+                    $curso_vitrine->is_enrolled = isset($mapa_matriculados[$curso_vitrine->id]);
+                    
+                    $curso_vitrine->summary = trim(strip_tags($curso_vitrine->summary));
+                    
+                    $vitrine_autoinscricoes[] = $curso_vitrine;
+                }
+            }
+        }
+
 
         return [
             "semestres" => $this->get_semestres($all_diarios),
@@ -148,6 +218,7 @@ class get_diarios_service extends \tool_painelava\service
             "diarios" => $diarios,
             "coordenacoes" => $coordenacoes,
             "praticas" => $praticas,
+            "vitrine_autoinscricoes" => $vitrine_autoinscricoes, 
         ];
     }
 
