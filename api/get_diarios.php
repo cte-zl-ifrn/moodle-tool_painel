@@ -74,12 +74,13 @@ class get_diarios_service extends \tool_painelava\service
             SELECT      c.id, 
                         c.shortname shortname,
                         c.fullname fullname
-            FROM        {role_assignments} ra
-                            INNER JOIN {user} u ON (ra.userid=u.id)
-                            INNER JOIN {role} r ON (ra.roleid = r.id)
-                            INNER JOIN {context} ctx ON (ra.contextid=ctx.id AND ctx.contextlevel=50)
-                                INNER JOIN {course} c ON (ctx.instanceid=c.id)
-            WHERE u.username = ?
+            FROM        {user} u
+                            INNER JOIN {user_enrolments} ue ON (ue.userid = u.id)
+                            INNER JOIN {enrol} e ON (e.id = ue.enrolid)
+                            INNER JOIN {course} c ON (c.id = e.courseid)
+            WHERE u.username = ? 
+              AND ue.status = 0 
+              AND e.status = 0
             ",
             [strtolower($username)]
         );

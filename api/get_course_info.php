@@ -21,14 +21,45 @@ class get_course_info_service extends \tool_painelava\service
 
         // Busca o curso
         $course = $DB->get_record('course', ['id' => $courseid], 'id, fullname, shortname, summary', MUST_EXIST);
+        $context = \context_course::instance($course->id);
+        
+        $carga_horaria = ""; 
+        
+        // Adicionamos decvalue na consulta
+        $sql_cf = "SELECT d.intvalue, d.charvalue, d.decvalue 
+                   FROM {customfield_data} d
+                   JOIN {customfield_field} f ON d.fieldid = f.id
+                   WHERE d.instanceid = ? AND f.shortname = 'carga_horaria'";
+        
+        if ($cf_record = $DB->get_record_sql($sql_cf, [$course->id])) {
+            
+            // Verifica na ordem de probabilidade para campos numéricos
+            if ($cf_record->decvalue !== null) {
+                // Se for salvo como decimal (ex: 40.00000), usamos floatval para tirar os zeros extras
+                $carga_horaria = floatval($cf_record->decvalue); 
+            } elseif ($cf_record->charvalue !== null && $cf_record->charvalue !== '') {
+                // Se for salvo como texto puro
+                $carga_horaria = trim($cf_record->charvalue);
+            } elseif ($cf_record->intvalue !== null) {
+                // Último caso
+                $carga_horaria = $cf_record->intvalue;
+            }
+        }
         
         // Verifica se o usuário atual já está inscrito no curso
         $is_enrolled = false;
         if (!empty($username)) {
-            $USER = $DB->get_record('user', ['username' => $username]);
-            if ($USER) {
-                $context = \context_course::instance($course->id);
-                $is_enrolled = is_enrolled($context, $USER->id);
+            $user_record = $DB->get_record('user', ['username' => $username], 'id');
+            if ($user_record) {
+                $sql = "SELECT ue.id 
+                        FROM {user_enrolments} ue
+                        JOIN {enrol} e ON e.id = ue.enrolid
+                        WHERE e.courseid = ? 
+                          AND ue.userid = ? 
+                          AND ue.status = 0 
+                          AND e.status = 0";
+                
+                $is_enrolled = $DB->record_exists_sql($sql, [$course->id, $user_record->id]);
             }
         }
 
@@ -39,7 +70,6 @@ class get_course_info_service extends \tool_painelava\service
             $OUTPUT = $PAGE->get_renderer('core');
         }
 
-        $context = \context_course::instance($course->id);
         $teachers = get_enrolled_users($context, 'moodle/course:update'); 
         $docentes = [];
 
@@ -69,7 +99,8 @@ class get_course_info_service extends \tool_painelava\service
             "shortname" => $course->shortname,
             "summary" => trim(($summary)),
             "is_enrolled" => $is_enrolled,
-            "docentes" => $docentes
+            "docentes" => $docentes,
+            "carga_horaria" => $carga_horaria
         ];
     }
 }
