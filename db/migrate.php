@@ -29,7 +29,7 @@ namespace tool_painelava;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once("../../config.php");
+require_once('../../../../config.php');
 require_once($CFG->dirroot . '/admin/tool/painelava/locallib.php');
 
 
