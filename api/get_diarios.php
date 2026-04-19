@@ -188,7 +188,7 @@ class get_diarios_service extends \tool_painelava\service
             $coursecontext = \context_course::instance($diario->id);
             $diario->can_set_visibility = has_capability('moodle/course:visibility', $coursecontext, $USER) ? 1 : 0;
 
-            $sql = "SELECT f.shortname, d.intvalue, d.charvalue, f.type, f.configdata
+            $sql = "SELECT f.shortname, d.intvalue, d.charvalue, d.value, f.type, f.configdata
                     FROM {customfield_data} d
                     JOIN {customfield_field} f ON d.fieldid = f.id
                     WHERE d.instanceid = ?";
@@ -196,14 +196,7 @@ class get_diarios_service extends \tool_painelava\service
 
             $cf = new \stdClass();
             foreach ($cf_records as $record) {
-                if ($record->type === 'select') {
-                    $config = json_decode($record->configdata);
-                    $options = explode("\n", str_replace("\r", "", $config->options ?? ''));
-                    $index = ((int)$record->intvalue) - 1;
-                    $cf->{$record->shortname} = $options[$index] ?? '';
-                } else {
-                    $cf->{$record->shortname} = $record->charvalue;
-                }
+                $cf->{$record->shortname} = $record->value ?: $record->charvalue;
             }
 
             $sala_tipo = isset($cf->sala_tipo) ? strtolower(trim($cf->sala_tipo)) : '';
@@ -240,96 +233,85 @@ class get_diarios_service extends \tool_painelava\service
         $campo_sala = $DB->get_record('customfield_field', ['shortname' => 'sala_tipo']);
         
         if ($campo_sala) {
-            $config = json_decode($campo_sala->configdata);
-            $opcoes = explode("\n", str_replace("\r", "", $config->options ?? ''));
-            $indice_opcao = -1;
-            
-            foreach ($opcoes as $i => $opcao) {
-                if (strtolower(trim($opcao)) === 'autoinscricoes') {
-                    $indice_opcao = $i + 1;
-                    break;
+
+            // 2. Busca todos os cursos visíveis marcados com essa opção
+            $sql_vitrine = "SELECT c.id, c.fullname, c.shortname
+                            FROM {course} c
+                            JOIN {customfield_data} d ON d.instanceid = c.id
+                            WHERE d.fieldid = ? AND d.value = ? AND c.visible = 1";
+                            
+            $cursos_vitrine = $DB->get_records_sql($sql_vitrine, [$campo_sala->id, 'autoinscricoes']);
+
+            if (!empty($cursos_vitrine)) {
+                
+                // A) Busca o JSON do aluno logado
+                $sql_user_json = "SELECT d.data
+                                    FROM {user_info_data} d
+                                    JOIN {user_info_field} f ON d.fieldid = f.id
+                                    WHERE d.userid = ? AND f.shortname = 'last_login'";
+                $json_record = $DB->get_record_sql($sql_user_json, [$USER->id]);
+
+                $aluno_data = [];
+                if ($json_record && !empty($json_record->data)) {
+                    $texto_limpo = html_entity_decode(strip_tags($json_record->data), ENT_QUOTES, 'UTF-8');
+                    $aluno_data = json_decode($texto_limpo, true);
                 }
-            }
 
-            if ($indice_opcao !== -1) {
-                // 2. Busca todos os cursos visíveis marcados com essa opção
-                $sql_vitrine = "SELECT c.id, c.fullname, c.shortname
-                                FROM {course} c
-                                JOIN {customfield_data} d ON d.instanceid = c.id
-                                WHERE d.fieldid = ? AND d.intvalue = ? AND c.visible = 1";
-                                
-                $cursos_vitrine = $DB->get_records_sql($sql_vitrine, [$campo_sala->id, $indice_opcao]);
+                $aluno_modalidade_id = $this->resolve_dot_notation($aluno_data, 'modalidade.id');
+                $aluno_nivel_id = $this->resolve_dot_notation($aluno_data, 'modalidade.nivel_ensino.id');
 
-                if (!empty($cursos_vitrine)) {
+                // B) Busca TODAS as restrições dos cursos da vitrine em lote
+                $vitrine_ids = array_column($cursos_vitrine, 'id');
+                list($v_insql, $v_inparams) = $DB->get_in_or_equal($vitrine_ids);
+                
+                // Modalidade e Nível ensino do curso para comparar
+                $sql_cf_vitrine = "SELECT d.instanceid, f.shortname, d.charvalue
+                                    FROM {customfield_data} d
+                                    JOIN {customfield_field} f ON d.fieldid = f.id
+                                    WHERE d.instanceid $v_insql
+                                        AND f.shortname IN ('curso_modalidade_id', 'curso_nivel_ensino_id')";
+                
+                $cf_vitrine_records = $DB->get_records_sql($sql_cf_vitrine, $v_inparams);
+                
+                $cf_vitrine = [];
+                if ($cf_vitrine_records) {
+                    foreach ($cf_vitrine_records as $rec) {
+                        $cf_vitrine[$rec->instanceid][$rec->shortname] = trim($rec->charvalue);
+                    }
+                }
+
+                // C) Monta o mapa de matrículas
+                $mapa_matriculados = [];
+                foreach ($all_diarios as $diario_aluno) {
+                    $mapa_matriculados[$diario_aluno->id] = true;
+                }
+
+                // D) Avalia curso por curso
+                foreach ($cursos_vitrine as $curso_vitrine) {
                     
-                    // A) Busca o JSON do aluno logado
-                    $sql_user_json = "SELECT d.data
-                                      FROM {user_info_data} d
-                                      JOIN {user_info_field} f ON d.fieldid = f.id
-                                      WHERE d.userid = ? AND f.shortname = 'last_login'";
-                    $json_record = $DB->get_record_sql($sql_user_json, [$USER->id]);
+                    $passou_nos_filtros = true; 
+                    
+                    $curso_mod_id = $cf_vitrine[$curso_vitrine->id]['curso_modalidade_id'] ?? '';
+                    $curso_niv_id = $cf_vitrine[$curso_vitrine->id]['curso_nivel_ensino_id'] ?? '';
 
-                    $aluno_data = [];
-                    if ($json_record && !empty($json_record->data)) {
-                        $texto_limpo = html_entity_decode(strip_tags($json_record->data), ENT_QUOTES, 'UTF-8');
-                        $aluno_data = json_decode($texto_limpo, true);
+                    // REGRA 1: FILTRO DE MODALIDADE
+                    if ($curso_mod_id !== '' && (string)$curso_mod_id !== (string)$aluno_modalidade_id) {
+                        $passou_nos_filtros = false;
                     }
 
-                    $aluno_modalidade_id = $this->resolve_dot_notation($aluno_data, 'modalidade.id');
-                    $aluno_nivel_id = $this->resolve_dot_notation($aluno_data, 'modalidade.nivel_ensino.id');
-
-                    // B) Busca TODAS as restrições dos cursos da vitrine em lote
-                    $vitrine_ids = array_column($cursos_vitrine, 'id');
-                    list($v_insql, $v_inparams) = $DB->get_in_or_equal($vitrine_ids);
-                    
-                    // Modalidade e Nível ensino do curso para comparar
-                    $sql_cf_vitrine = "SELECT d.instanceid, f.shortname, d.charvalue
-                                       FROM {customfield_data} d
-                                       JOIN {customfield_field} f ON d.fieldid = f.id
-                                       WHERE d.instanceid $v_insql
-                                         AND f.shortname IN ('curso_modalidade_id', 'curso_nivel_ensino_id')";
-                    
-                    $cf_vitrine_records = $DB->get_records_sql($sql_cf_vitrine, $v_inparams);
-                    
-                    $cf_vitrine = [];
-                    if ($cf_vitrine_records) {
-                        foreach ($cf_vitrine_records as $rec) {
-                            $cf_vitrine[$rec->instanceid][$rec->shortname] = trim($rec->charvalue);
-                        }
+                    // REGRA 2: FILTRO DE NÍVEL DE ENSINO
+                    if ($curso_niv_id !== '' && (string)$curso_niv_id !== (string)$aluno_nivel_id) {
+                        $passou_nos_filtros = false;
                     }
 
-                    // C) Monta o mapa de matrículas
-                    $mapa_matriculados = [];
-                    foreach ($all_diarios as $diario_aluno) {
-                        $mapa_matriculados[$diario_aluno->id] = true;
+                    if ($passou_nos_filtros) {
+                        $curso_vitrine->is_enrolled = isset($mapa_matriculados[$curso_vitrine->id]);
+                        $vitrine_autoinscricoes[] = $curso_vitrine;
                     }
+                }
 
-                    // D) Avalia curso por curso
-                    foreach ($cursos_vitrine as $curso_vitrine) {
-                        
-                        $passou_nos_filtros = true; 
-                        
-                        $curso_mod_id = $cf_vitrine[$curso_vitrine->id]['curso_modalidade_id'] ?? '';
-                        $curso_niv_id = $cf_vitrine[$curso_vitrine->id]['curso_nivel_ensino_id'] ?? '';
-
-                        // REGRA 1: FILTRO DE MODALIDADE
-                        if ($curso_mod_id !== '' && (string)$curso_mod_id !== (string)$aluno_modalidade_id) {
-                            $passou_nos_filtros = false;
-                        }
-
-                        // REGRA 2: FILTRO DE NÍVEL DE ENSINO
-                        if ($curso_niv_id !== '' && (string)$curso_niv_id !== (string)$aluno_nivel_id) {
-                            $passou_nos_filtros = false;
-                        }
-
-                        if ($passou_nos_filtros) {
-                            $curso_vitrine->is_enrolled = isset($mapa_matriculados[$curso_vitrine->id]);
-                            $vitrine_autoinscricoes[] = $curso_vitrine;
-                        }
-                    }
-
-                }    
-            }
+            }  
+                
         }
 
 
