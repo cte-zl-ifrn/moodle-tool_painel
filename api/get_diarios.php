@@ -11,15 +11,8 @@ require_once('../../../../config.php');
 require_once('../locallib.php');
 require_once("servicelib.php");
 
-// define("REGEX_CODIGO_DIARIO", '/^(\d\d\d\d\d)\.(\d*)\.(\d*)\.(.*)\.(.*\..*)$/');
 define("REGEX_CODIGO_COORDENACAO", '/^ZL\.\d*/');
 define("REGEX_CODIGO_PRATICA", '/^(.*)\.(\d{11,14}\d*)$/');
-// define("REGEX_CODIGO_DIARIO_ELEMENTS_COUNT", 6);
-// define("REGEX_CODIGO_DIARIO_SEMESTRE", 1);
-// define("REGEX_CODIGO_DIARIO_PERIODO", 2);
-// define("REGEX_CODIGO_DIARIO_CURSO", 3);
-// define("REGEX_CODIGO_DIARIO_TURMA", 4);
-// define("REGEX_CODIGO_DIARIO_DISCIPLINA", 5);
 
 class get_diarios_service extends \tool_painelava\service
 {
@@ -114,44 +107,60 @@ class get_diarios_service extends \tool_painelava\service
     }
 
     /**
-     * Busca um valor dentro de um array associativo usando "dot notation".
-     * Exemplo: busca 'modalidade.id' dentro do JSON de login.
+     * Busca valores dentro de um array associativo usando "dot notation", 
+     * com suporte a curingas (*) para iterar sobre listas.
      */
     private function resolve_dot_notation($array, $path) {
         $keys = explode('.', $path);
+        $results = [$array];
+
         foreach ($keys as $key) {
-            if (is_array($array) && array_key_exists($key, $array)) {
-                $array = $array[$key];
-            } else {
-                return null;
+            $next_results = [];
+            foreach ($results as $item) {
+                if ($key === '*') {
+                    // Se for curinga, adiciona todos os sub-itens (para olhar dentro do array)
+                    if (is_array($item)) {
+                        foreach ($item as $sub_item) {
+                            $next_results[] = $sub_item;
+                        }
+                    }
+                } else {
+                    if (is_array($item) && array_key_exists($key, $item)) {
+                        $next_results[] = $item[$key];
+                    }
+                }
             }
+            $results = $next_results;
         }
-        return $array;
+
+        return $results;
     }
 
     /**
      * Verifica se o aluno atende a uma restrição específica.
      */
     private function avalia_restricao($aluno_data, $chave, $valor_esperado) {
-        // Busca o valor real que está no JSON do aluno
-        $valor_aluno = $this->resolve_dot_notation($aluno_data, $chave);
-        
-        // O JSON do SUAP unificou os campos "eh_*" dentro de "tipo_usuario"
-        if (strpos($chave, 'eh_') === 0 && $valor_aluno === null) {
-            // Se a chave é 'eh_aluno' e não existe direto no JSON, procuramos no 'tipo_usuario'
+        // Tratamento especial legado do SUAP (unificação em 'tipo_usuario')
+        if (strpos($chave, 'eh_') === 0 && !array_key_exists($chave, $aluno_data)) {
             $tipo_usuario = strtolower($aluno_data['tipo_usuario'] ?? '');
-            
-            // Mapeamento básico: 'eh_aluno' -> procura por 'aluno'
             $termo_busca = str_replace('eh_', '', $chave); 
             $valor_aluno = (strpos($tipo_usuario, $termo_busca) !== false) ? 'true' : 'false';
+            return (string)$valor_aluno === (string)$valor_esperado;
         }
 
-        if (is_bool($valor_aluno)) {
-            $valor_aluno = $valor_aluno ? 'true' : 'false';
+        $valores_aluno = $this->resolve_dot_notation($aluno_data, $chave);
+        
+        foreach ($valores_aluno as $v) {
+            if (is_bool($v)) {
+                $v = $v ? 'true' : 'false';
+            }
+            // Se bater com a restrição, já retorna verdadeiro e sai da função
+            if ((string)$v === (string)$valor_esperado) {
+                return true;
+            }
         }
 
-        // Verifica se bateu (usando == para ignorar diferenças de int/string como 1 e "1")
-        return (string)$valor_aluno === (string)$valor_esperado;
+        return false;
     }
 
 
@@ -162,27 +171,20 @@ class get_diarios_service extends \tool_painelava\service
     {
         global $DB;
         $autoinscricoes = [];
-        
-        // 1. Descobre o ID do campo "sala_tipo"
-        $campo_sala = $DB->get_record('customfield_field', ['shortname' => 'sala_tipo']);
-        
-        if (!$campo_sala) {
-            return $autoinscricoes;
-        }
 
-        // 2. Busca todos os cursos visíveis marcados com "autoinscricoes"
+        $campo_sala = $DB->get_record('customfield_field', ['shortname' => 'sala_tipo']);
+        if (!$campo_sala) return $autoinscricoes;
+
+        // Cursos visíveis marcados com "autoinscricoes"
         $sql_vitrine = "SELECT c.id, c.fullname, c.shortname
                         FROM {course} c
                         JOIN {customfield_data} d ON d.instanceid = c.id
                         WHERE d.fieldid = ? AND d.value = ? AND c.visible = 1";
                         
         $cursos_vitrine = $DB->get_records_sql($sql_vitrine, [$campo_sala->id, 'autoinscricoes']);
-
-        if (empty($cursos_vitrine)) {
-            return $autoinscricoes;
-        }
+        if (empty($cursos_vitrine)) return $autoinscricoes;
             
-        // A) Busca o JSON do aluno logado
+        // JSON do aluno logado
         $sql_user_json = "SELECT d.data
                             FROM {user_info_data} d
                             JOIN {user_info_field} f ON d.fieldid = f.id
@@ -195,50 +197,54 @@ class get_diarios_service extends \tool_painelava\service
             $aluno_data = json_decode($texto_limpo, true);
         }
 
-        $aluno_modalidade_id = $this->resolve_dot_notation($aluno_data, 'modalidade.id');
-        $aluno_nivel_id = $this->resolve_dot_notation($aluno_data, 'modalidade.nivel_ensino.id');
-
-        // B) Busca TODAS as restrições dos cursos da vitrine em lote
+        // Busca a NOVA regra: 'restricoes_de_autoinscricao'
         $vitrine_ids = array_column($cursos_vitrine, 'id');
         list($v_insql, $v_inparams) = $DB->get_in_or_equal($vitrine_ids);
         
-        $sql_cf_vitrine = "SELECT d.instanceid, f.shortname, d.charvalue
+        $sql_cf_vitrine = "SELECT d.instanceid, d.value, d.charvalue
                             FROM {customfield_data} d
                             JOIN {customfield_field} f ON d.fieldid = f.id
                             WHERE d.instanceid $v_insql
-                                AND f.shortname IN ('curso_modalidade_id', 'curso_nivel_ensino_id')";
+                                AND f.shortname = 'restricoes_de_autoinscricao'";
         
         $cf_vitrine_records = $DB->get_records_sql($sql_cf_vitrine, $v_inparams);
         
         $cf_vitrine = [];
         if ($cf_vitrine_records) {
             foreach ($cf_vitrine_records as $rec) {
-                $cf_vitrine[$rec->instanceid][$rec->shortname] = trim($rec->charvalue);
+                $cf_vitrine[$rec->instanceid] = $rec->value ?: $rec->charvalue;
             }
         }
 
-        // C) Monta o mapa de matrículas (para saber se o aluno já faz o curso)
         $mapa_matriculados = [];
         foreach ($all_diarios as $diario_aluno) {
             $mapa_matriculados[$diario_aluno->id] = true;
         }
 
-        // D) Avalia curso por curso e aplica regras
+        // Avalia curso por curso
         foreach ($cursos_vitrine as $curso_vitrine) {
-            
-            $passou_nos_filtros = true; 
-            
-            $curso_mod_id = $cf_vitrine[$curso_vitrine->id]['curso_modalidade_id'] ?? '';
-            $curso_niv_id = $cf_vitrine[$curso_vitrine->id]['curso_nivel_ensino_id'] ?? '';
 
-            // REGRA 1: FILTRO DE MODALIDADE
-            if ($curso_mod_id !== '' && (string)$curso_mod_id !== (string)$aluno_modalidade_id) {
-                $passou_nos_filtros = false;
-            }
+            $json_restricoes_str = $cf_vitrine[$curso_vitrine->id] ?? '';
 
-            // REGRA 2: FILTRO DE NÍVEL DE ENSINO
-            if ($curso_niv_id !== '' && (string)$curso_niv_id !== (string)$aluno_nivel_id) {
-                $passou_nos_filtros = false;
+            $texto_limpo_restricoes = html_entity_decode(strip_tags($json_restricoes_str), ENT_QUOTES, 'UTF-8');
+            $restricoes = json_decode($texto_limpo_restricoes, true);
+
+            $passou_nos_filtros = false;
+
+            if (empty($restricoes)) {
+                // SE NÃO TEM RESTRIÇÃO: O curso é aberto para todos
+                $passou_nos_filtros = true;
+            } else {
+                // SE TEM RESTRIÇÃO: O aluno precisa atender a pelo menos UMA
+                foreach ($restricoes as $regra) {
+                    $chave = $regra['chave'] ?? '';
+                    $valor_esperado = $regra['restricao'] ?? '';
+                    
+                    if ($this->avalia_restricao($aluno_data, $chave, $valor_esperado)) {
+                        $passou_nos_filtros = true;
+                        break;
+                    }
+                }
             }
 
             if ($passou_nos_filtros) {
@@ -348,7 +354,6 @@ class get_diarios_service extends \tool_painelava\service
             "autoinscricoes" => $autoinscricoes,
         ];
 
-        // Se o usuário não estiver em nenhuma sala, garante que 'diarios' pelo menos vá vazio
         if (empty($agrupamentos)) {
             $agrupamentos['diarios'] = [];
         }
