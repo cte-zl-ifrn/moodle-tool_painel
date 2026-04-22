@@ -169,7 +169,7 @@ class get_diarios_service extends \tool_painelava\service
      */
     private function get_autoinscricoes($userid, $all_diarios) 
     {
-        global $DB;
+        global $DB, $CFG;
         $autoinscricoes = [];
 
         $campo_sala = $DB->get_record('customfield_field', ['shortname' => 'sala_tipo']);
@@ -249,6 +249,7 @@ class get_diarios_service extends \tool_painelava\service
 
             if ($passou_nos_filtros) {
                 $curso_vitrine->is_enrolled = isset($mapa_matriculados[$curso_vitrine->id]);
+                $curso_vitrine->viewurl = $CFG->wwwroot . '/course/view.php?id=' . $curso_vitrine->id;
                 $autoinscricoes[] = $curso_vitrine;
             }
         }
