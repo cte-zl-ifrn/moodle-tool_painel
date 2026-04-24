@@ -40,7 +40,11 @@ $string["auth_token"] = 'Auth token';
 $string["auth_token_desc"] = 'Which will be the token used by Painel AVA to authenticate itself to this Moodle installation';
 
 $string['painel_url'] = 'Painel AVA URL';
-$string['painel_url_desc'] = '(ex: https://ava.ifrn.edu.br)';
+$string['painel_url_desc'] = 'It is used to update user preference settings (e.g., https://ava.ifrn.edu.br)';
+
+$string['course_custom_field_sala_tipo'] = 'Course custom field: Sala Tipo';
+$string['course_custom_field_sala_tipo_desc'] = 'This course custom field is used to identify the type of room associated with the course, such as "Laboratory", "Classroom", "Virtual Room", etc. It is essential for categorizing courses based on the learning environment and can be used to filter or organize courses in the Painel AVA.';
+
 
 // Events.
 $string['event_user_courses_requested'] = 'User course list requested';

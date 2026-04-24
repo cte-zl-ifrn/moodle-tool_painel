@@ -40,7 +40,10 @@ $string["auth_token"] = 'Token de autenticação';
 $string["auth_token_desc"] = 'Qual será o token utilizado pelo Painel AVA para se autenticar nesta instalação do Moodle';
 
 $string['painel_url'] = 'Painel AVA URL';
-$string['painel_url_desc'] = '(ex: https://ava.ifrn.edu.br)';
+$string['painel_url_desc'] = 'É usado para atualizar as configurações de preferências de usuário (ex: https://ava.ifrn.edu.br)';
+
+$string['course_custom_field_sala_tipo'] = 'Campo personalizado do curso: Sala Tipo';
+$string['course_custom_field_sala_tipo_desc'] = 'Este campo personalizado do curso é utilizado para identificar o tipo de sala associada ao curso, como "Laboratório", "Sala de Aula", "Sala Virtual", etc. Ele é essencial para categorizar os cursos com base no ambiente de aprendizagem e pode ser utilizado para filtrar ou organizar os cursos no Painel AVA.';
 
 // Events.
 $string['event_user_courses_requested'] = 'Lista de cursos do usuário solicitada';
