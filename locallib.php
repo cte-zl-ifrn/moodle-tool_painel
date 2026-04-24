@@ -52,3 +52,21 @@ function config($name)
 {
     return get_config('tool_painelava', $name);
 }
+
+
+function aget($array, $key, $default = null)
+{
+    return \key_exists($key, $array) ? $array[$key] : $default;
+}
+
+
+function get_recordset_as_array($sql, $params)
+{
+    global $DB;
+
+    $result = [];
+    foreach ($DB->get_recordset_sql($sql, $params) as $disciplina) {
+        $result[] = $disciplina;
+    }
+    return $result;
+}

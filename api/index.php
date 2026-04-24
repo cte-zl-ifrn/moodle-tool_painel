@@ -32,8 +32,8 @@ try {
     if (!defined('NO_MOODLE_COOKIES')) {
         define('NO_MOODLE_COOKIES', true);
     }
-    
-    require_once('../../../config.php');
+
+    require_once('../../../../config.php');
     header('Content-Type: application/json; charset=utf-8');
     ini_set('display_errors', 1);
     ini_set('display_startup_errors', 1);
@@ -44,6 +44,7 @@ try {
     $whitelist = [
         'get_diarios',
         'get_atualizacoes_counts',
+        'get_course_info',
 
         'set_favourite_course',
         'set_visible_course',
@@ -52,25 +53,24 @@ try {
         'sync_user_preference',
         'sync_up_enrolments',
         // 'sync_down_attendances',
-        'sync_down_grades'
+        'sync_down_grades',
+        'enrol_course',
+        'suspend_enrol'
     ];
     $params = explode('&', $_SERVER["QUERY_STRING"]);
     $service_name = $params[0];
 
-    if ( (!in_array($service_name, $whitelist)) ) {
+    if (!in_array($service_name, $whitelist)) {
         throw new \Exception("Serviço não existe", 404);       
     }
-    require_once "$service_name.php";
+    
+    require_once __DIR__ . "/{$service_name}.php";
 
-    $service_class = "\tool_painelava\\$service_name"."_service";
+    $service_class = "\\tool_painelava\\{$service_name}_service";
+    
     $service = new $service_class();
     $service->call();
-} catch (\Exception $e) {   
-    /*
-        200 – 208, 226, 
-        300 – 305, 307, 308
-        400 – 417, 422 – 424, 426, 428 – 429, 431
-        500 – 508, 510 – 511
-    */
-    exception_handler($e);
-}
+
+    } catch (\Throwable $e) {   
+        exception_handler($e);
+    }

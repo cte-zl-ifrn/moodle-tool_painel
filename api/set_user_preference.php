@@ -7,7 +7,7 @@ if (!defined('NO_MOODLE_COOKIES')) {
     define('NO_MOODLE_COOKIES', true);
 }
 
-require_once('../../../config.php');
+require_once('../../../../config.php');
 require_once('../locallib.php');
 require_once("servicelib.php");
 
