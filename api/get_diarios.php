@@ -96,14 +96,28 @@ class get_diarios_service extends \tool_painelava\service
         }
 
         foreach ($courses as &$c) {
-            $c->turma_ano_periodo = $cfs[$c->id]['turma_ano_periodo'] ?? '';
-            $c->disciplina_id = $cfs[$c->id]['disciplina_id'] ?? '';
-            $c->disciplina_descricao = $cfs[$c->id]['disciplina_descricao'] ?? '';
-            $c->curso_codigo = $cfs[$c->id]['curso_codigo'] ?? '';
-            $c->curso_descricao = $cfs[$c->id]['curso_descricao'] ?? '';
+            $cf_dados_curso = $cfs[$c->id] ?? [];
+            $this->inject_custom_fields($c, $cf_dados_curso);
         }
 
         return $courses;
+    }
+
+    /**
+     * Injeta os campos customizados padronizados no objeto do curso.
+     * Aceita os dados de origem tanto como Array quanto como Objeto.
+     */
+    private function inject_custom_fields($curso, $cf_data) {
+        $cf_data = (array) $cf_data;
+
+        $curso->turma_ano_periodo = isset($cf_data['turma_ano_periodo']) ? trim($cf_data['turma_ano_periodo']) : '';
+        $curso->disciplina_id     = isset($cf_data['disciplina_id']) ? trim($cf_data['disciplina_id']) : '';
+        $curso->disciplina_sigla  = isset($cf_data['disciplina_sigla']) ? trim($cf_data['disciplina_sigla']) : '';
+        $curso->curso_codigo      = isset($cf_data['curso_codigo']) ? trim($cf_data['curso_codigo']) : '';
+        $curso->curso_descricao   = isset($cf_data['curso_descricao']) ? trim($cf_data['curso_descricao']) : '';
+        $curso->diario_id         = isset($cf_data['diario_id']) ? trim($cf_data['diario_id']) : null;
+        
+        return $curso;
     }
 
     /**
@@ -179,7 +193,7 @@ class get_diarios_service extends \tool_painelava\service
         $sql_vitrine = "SELECT c.id, c.fullname, c.shortname
                         FROM {course} c
                         JOIN {customfield_data} d ON d.instanceid = c.id
-                        WHERE d.fieldid = ? AND d.value = ? AND c.visible = 1";
+                        WHERE d.fieldid = ? AND d.charvalue = ? AND c.visible = 1";
                         
         $cursos_vitrine = $DB->get_records_sql($sql_vitrine, [$campo_sala->id, 'autoinscricoes']);
         if (empty($cursos_vitrine)) return $autoinscricoes;
@@ -197,22 +211,22 @@ class get_diarios_service extends \tool_painelava\service
             $aluno_data = json_decode($texto_limpo, true);
         }
 
-        // Busca a NOVA regra: 'restricoes_de_autoinscricao'
+        // Busca a NOVA regra: 'restricoes_de_autoinscricao' e os campos customizados
         $vitrine_ids = array_column($cursos_vitrine, 'id');
         list($v_insql, $v_inparams) = $DB->get_in_or_equal($vitrine_ids);
         
-        $sql_cf_vitrine = "SELECT d.instanceid, d.value, d.charvalue
+        $sql_cf_vitrine = "SELECT d.id AS dataid, d.instanceid, f.shortname, d.value, d.charvalue
                             FROM {customfield_data} d
                             JOIN {customfield_field} f ON d.fieldid = f.id
                             WHERE d.instanceid $v_insql
-                                AND f.shortname = 'restricoes_de_autoinscricao'";
+                                AND f.shortname IN ('restricoes_de_autoinscricao', 'turma_ano_periodo', 'disciplina_id', 'disciplina_sigla', 'curso_codigo', 'curso_descricao', 'diario_id')";
         
         $cf_vitrine_records = $DB->get_records_sql($sql_cf_vitrine, $v_inparams);
         
         $cf_vitrine = [];
         if ($cf_vitrine_records) {
             foreach ($cf_vitrine_records as $rec) {
-                $cf_vitrine[$rec->instanceid] = $rec->value ?: $rec->charvalue;
+                $cf_vitrine[$rec->instanceid][$rec->shortname] = $rec->value ?: $rec->charvalue;
             }
         }
 
@@ -224,10 +238,12 @@ class get_diarios_service extends \tool_painelava\service
         // Avalia curso por curso
         foreach ($cursos_vitrine as $curso_vitrine) {
 
-            $json_restricoes_str = $cf_vitrine[$curso_vitrine->id] ?? '';
+            $json_restricoes_str = $cf_vitrine[$curso_vitrine->id]['restricoes_de_autoinscricao'] ?? '';
 
             $texto_limpo_restricoes = html_entity_decode(strip_tags($json_restricoes_str), ENT_QUOTES, 'UTF-8');
             $restricoes = json_decode($texto_limpo_restricoes, true);
+
+            $this->inject_custom_fields($curso_vitrine, $cf_vitrine[$curso_vitrine->id] ?? []);
 
             $passou_nos_filtros = false;
 
@@ -307,6 +323,8 @@ class get_diarios_service extends \tool_painelava\service
             foreach ($cf_records as $record) {
                 $cf->{$record->shortname} = $record->value ?: $record->charvalue ?: $record->shortcharvalue;
             }
+
+            $this->inject_custom_fields($curso_limpo, $cf);
 
             $sala_tipo = isset($cf->sala_tipo) ? strtolower(trim($cf->sala_tipo)) : '';
 
