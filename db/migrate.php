@@ -62,29 +62,29 @@ function bulk_course_custom_field()
         ['sortorder' => get_last_sort_order('customfield_category'), 'itemid' => 0, 'contextid' => 1, 'descriptionformat' => 0, 'timecreated' => time(), 'timemodified' => time()]
     )->id;
 
-    $sql = "select 'diarios' AS id, 'Diários' as data "
-         . "union select 'autoinscricoes' AS id, 'Autoinscrições' as data "
-         . "union select 'coordenacoes' AS id, 'Coordenações' as data "
-         . "union select 'praticas' AS id, 'Práticas' as data "
-         . "union select 'modelos' AS id, 'Modelos' as data";
+    // $sql = "select 'diarios' AS id, 'Diários' as data "
+    //      . "union select 'autoinscricoes' AS id, 'Autoinscrições' as data "
+    //      . "union select 'coordenacoes' AS id, 'Coordenações' as data "
+    //      . "union select 'praticas' AS id, 'Práticas' as data "
+    //      . "union select 'modelos' AS id, 'Modelos' as data";
 
-    $configdata = json_encode([
-        "required" => "0",
-        "uniquevalues" => "0",
-        "dynamicsql" => $sql,
-        "autocomplete" => "0",
-        "defaultvalue" => "",
-        "multiselect" => "0",
-        "locked" => "1",
-        "visibility" => "0"
-    ]);
-
+    // $configdata = json_encode([
+    //     "required" => "0",
+    //     "uniquevalues" => "0",
+    //     "dynamicsql" => $sql,
+    //     "autocomplete" => "0",
+    //     "defaultvalue" => "",
+    //     "multiselect" => "0",
+    //     "locked" => "1",
+    //     "visibility" => "0"
+    // ]);
+    save_course_custom_field($cid, 'curso_autoinscricao', 'Curso aceita autoinscrição', 'checkbox');
     save_course_custom_field(
         $cid,
         'sala_tipo',
         'Tipo de sala',
-        'dynamic', 
-        $configdata
+        // 'dynamic', 
+        // $configdata
     );
 }
 
