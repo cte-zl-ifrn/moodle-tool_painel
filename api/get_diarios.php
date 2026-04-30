@@ -340,7 +340,7 @@ class get_diarios_service extends \tool_painelava\service
             $curso_limpo->progress = $diario->progress ?? null;
             $curso_limpo->hasprogress = $diario->hasprogress ?? false;
             $curso_limpo->isfavourite = $diario->isfavourite ?? false;
-            $curso_limpo->hidden = $diario->hidden ?? false;
+            $curso_limpo->visible = $diario->visible ?? false;
             $curso_limpo->can_set_visibility = has_capability('moodle/course:visibility', $coursecontext, $USER) ? 1 : 0;
 
             $cf_dados = $cfs_matriculados[$diario->id] ?? [];
