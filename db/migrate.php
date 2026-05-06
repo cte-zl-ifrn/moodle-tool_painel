@@ -86,6 +86,7 @@ function bulk_course_custom_field()
         // 'dynamic', 
         // $configdata
     );
+    save_course_custom_field($cid, 'restricoes_de_autoinscricao', 'Restrições de autoinscrição', 'textarea', '{}');
 }
 
 
